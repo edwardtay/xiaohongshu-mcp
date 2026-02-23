@@ -1,0 +1,133 @@
+{
+  "name": "XHS Auto Post + Engage",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 24 }]
+        }
+      },
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.deepseek.com/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"你是一个小红书内容创作者。根据给定的主题，生成一篇小红书笔记。返回JSON格式：{\\\"title\\\": \\\"标题(最多20字)\\\", \\\"content\\\": \\\"正文(200-500字)\\\", \\\"tags\\\": [\\\"标签1\\\", \\\"标签2\\\", \\\"标签3\\\"]}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"主题：生活方式\"\n    }\n  ],\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+        "options": {}
+      },
+      "name": "DeepSeek Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "DeepSeek API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = JSON.parse($input.first().json.choices[0].message.content);\nreturn [{ json: response }];"
+      },
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.XHS_SERVICE_URL}}/api/v1/publish",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.XHS_API_KEY}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"{{ $json.title }}\",\n  \"content\": \"{{ $json.content }}\",\n  \"images\": [\"https://picsum.photos/800/600\"],\n  \"tags\": {{ JSON.stringify($json.tags) }}\n}",
+        "options": {}
+      },
+      "name": "Publish to XHS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "amount": "={{Math.floor(Math.random() * 120) + 60}}",
+        "unit": "minutes"
+      },
+      "name": "Random Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.XHS_SERVICE_URL}}/api/v1/feeds/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.XHS_API_KEY}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"keyword\": \"生活方式\" }",
+        "options": {}
+      },
+      "name": "Search Trending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const feeds = $input.first().json.data?.feeds || [];\nconst top3 = feeds.slice(0, 3);\nreturn top3.map(f => ({\n  json: {\n    feed_id: f.id || f.note_id,\n    xsec_token: f.xsec_token || ''\n  }\n}));"
+      },
+      "name": "Pick Top 3 Feeds",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.XHS_SERVICE_URL}}/api/v1/feeds/like",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{$env.XHS_API_KEY}}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"feed_id\": \"{{ $json.feed_id }}\",\n  \"xsec_token\": \"{{ $json.xsec_token }}\"\n}",
+        "options": {}
+      },
+      "name": "Like Feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 300]
+    }
+  ],
+  "connections": {
+    "Daily Trigger": { "main": [[{ "node": "DeepSeek Generate", "type": "main", "index": 0 }]] },
+    "DeepSeek Generate": { "main": [[{ "node": "Parse Response", "type": "main", "index": 0 }]] },
+    "Parse Response": { "main": [[{ "node": "Publish to XHS", "type": "main", "index": 0 }]] },
+    "Publish to XHS": { "main": [[{ "node": "Random Delay", "type": "main", "index": 0 }]] },
+    "Random Delay": { "main": [[{ "node": "Search Trending", "type": "main", "index": 0 }]] },
+    "Search Trending": { "main": [[{ "node": "Pick Top 3 Feeds", "type": "main", "index": 0 }]] },
+    "Pick Top 3 Feeds": { "main": [[{ "node": "Like Feed", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
