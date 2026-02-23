@@ -12,5 +12,14 @@ Dockerfile
 docker-compose.yml
 docker
 .DS_Store
-
 cookies.json
+
+# Large assets not needed in Docker image
+assets/
+docs/
+examples/
+deploy/
+donate/
+.all-contributorsrc
+*.gif
+*.mp4
