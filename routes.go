@@ -37,6 +37,7 @@ func setupRoutes(appServer *AppServer) *gin.Engine {
 
 	// API 路由组
 	api := router.Group("/api/v1")
+	api.Use(apiKeyAuthMiddleware())
 	{
 		api.GET("/login/status", appServer.checkLoginStatusHandler)
 		api.GET("/login/qrcode", appServer.getLoginQrcodeHandler)
