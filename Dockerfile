@@ -2,9 +2,8 @@
 FROM golang:1.24 AS builder
 
 WORKDIR /src
-# 配置 Go 模块代理为国内源
-ENV GOPROXY=https://goproxy.cn,direct
-ENV GOSUMDB=sum.golang.google.cn
+# 配置 Go 模块代理
+ENV GOPROXY=https://proxy.golang.org,direct
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -21,10 +20,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /app
 
-# 1. 先安装必要工具，然后配置阿里云镜像源
-RUN apt-get update && apt-get install -y ca-certificates wget gnupg && \
-    sed -i 's|http://archive.ubuntu.com|https://mirrors.aliyun.com|g' /etc/apt/sources.list && \
-    sed -i 's|http://security.ubuntu.com|https://mirrors.aliyun.com|g' /etc/apt/sources.list
+# 1. 安装必要工具
+RUN apt-get update && apt-get install -y ca-certificates wget gnupg
 
 # 2. 添加 Google Chrome APT 源并安装 Chrome（更稳定的无头浏览器）
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && \
