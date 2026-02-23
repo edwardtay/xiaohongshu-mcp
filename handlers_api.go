@@ -280,6 +280,82 @@ func healthHandler(c *gin.Context) {
 	}, "服务正常")
 }
 
+// likeFeedHandler 点赞笔记
+func (s *AppServer) likeFeedHandler(c *gin.Context) {
+	var req LikeFavoriteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST",
+			"请求参数错误", err.Error())
+		return
+	}
+
+	result, err := s.xiaohongshuService.LikeFeed(c.Request.Context(), req.FeedID, req.XsecToken)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "LIKE_FAILED",
+			"点赞失败", err.Error())
+		return
+	}
+
+	respondSuccess(c, result, result.Message)
+}
+
+// unlikeFeedHandler 取消点赞
+func (s *AppServer) unlikeFeedHandler(c *gin.Context) {
+	var req LikeFavoriteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST",
+			"请求参数错误", err.Error())
+		return
+	}
+
+	result, err := s.xiaohongshuService.UnlikeFeed(c.Request.Context(), req.FeedID, req.XsecToken)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "UNLIKE_FAILED",
+			"取消点赞失败", err.Error())
+		return
+	}
+
+	respondSuccess(c, result, result.Message)
+}
+
+// favoriteFeedHandler 收藏笔记
+func (s *AppServer) favoriteFeedHandler(c *gin.Context) {
+	var req LikeFavoriteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST",
+			"请求参数错误", err.Error())
+		return
+	}
+
+	result, err := s.xiaohongshuService.FavoriteFeed(c.Request.Context(), req.FeedID, req.XsecToken)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "FAVORITE_FAILED",
+			"收藏失败", err.Error())
+		return
+	}
+
+	respondSuccess(c, result, result.Message)
+}
+
+// unfavoriteFeedHandler 取消收藏
+func (s *AppServer) unfavoriteFeedHandler(c *gin.Context) {
+	var req LikeFavoriteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST",
+			"请求参数错误", err.Error())
+		return
+	}
+
+	result, err := s.xiaohongshuService.UnfavoriteFeed(c.Request.Context(), req.FeedID, req.XsecToken)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "UNFAVORITE_FAILED",
+			"取消收藏失败", err.Error())
+		return
+	}
+
+	respondSuccess(c, result, result.Message)
+}
+
 // myProfileHandler 我的信息
 func (s *AppServer) myProfileHandler(c *gin.Context) {
 	// 获取当前登录用户信息
